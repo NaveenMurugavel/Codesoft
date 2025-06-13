@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Project Management Tool - React SPA</title>
+<style>
+  /* Reset and base styling */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f5f7fa;
+    color: #2c3e50;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Container breakpoints & layout */
+  #root {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Layout grid system */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "content"
+      "footer";
+    height: 100vh;
+  }
+
+  @media (min-width: 768px) {
+    .app-layout {
+      grid-template-columns: 280px 1fr;
+      grid-template-areas:
+        "header header"
+        "sidebar content"
+        "footer footer";
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .app-layout {
+      grid-template-columns: 280px 1fr 320px;
+      grid-template-areas:
+        "header header header"
+        "sidebar content sidebar-right"
+        "footer footer footer";
+    }
+  }
+
+  header {
+    grid-area: header;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    color: white;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header h1 {
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 0.03em;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 16px;
+  }
+
+  .header-actions button, .header-actions select {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+
+  /* Sidebar */
+  aside.sidebar {
+    grid-area: sidebar;
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  aside.sidebar h2 {
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 24px;
+    color: #333;
+  }
+
+  /* Sidebar project list */
+  ul.project-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+  }
+
+  ul.project-list li {
+    margin-bottom: 12px;
+  }
+
+  ul.project-list li button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    width: 100%;
+    text-align: left;
+    padding: 8px 16px;
+    border-radius: 8px;
+    color: #4a4a4a;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  ul.project-list li button:hover, ul.project-list li button.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+
+  /* Add project button */
+  button.add-project-btn {
+    padding: 12px 16px;
+    background: #764ba2;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: background 0.3s ease;
+  }
+
+  button.add-project-btn:hover {
+    background: #5e3a89;
+  }
+
+  /* Main content */
+  main.content {
+    grid-area: content;
+    padding: 24px 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+  }
+
+  main.content h2 {
+    margin-bottom: 24px;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  /* Project header */
+  .project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .project-header h3 {
+    font-weight: 800;
+    font-size: 1.8rem;
+    margin: 0;
+  }
+
+  .project-header button {
+    padding: 10px 18px;
+    background: #667eea;
+    color: white;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .project-header button:hover {
+    background: #5469cc;
+  }
+
+  /* Task list */
+  .task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .task-list li {
+    background: white;
+    margin-bottom: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgb(0 0 0 / 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .task-list li:hover {
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .task-list li.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+  }
+
+  .task-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .task-item-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex: 1 1 auto;
+  }
+
+  .task-item-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  /* Buttons */
+  button.icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #667eea;
+    transition: color 0.2s ease;
+  }
+
+  button.icon-btn:hover {
+    color: #764ba2;
+  }
+
+  /* Task details */
+  .task-details {
+    font-size: 0.9rem;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .task-details span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Badges with icons */
+  .badge {
+    background: #eee;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .badge.low {
+    background: #d1e7dd;
+    color: #0f5132;
+  }
+
+  .badge.medium {
+    background: #fff3cd;
+    color: #664d03;
+  }
+
+  .badge.high {
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  /* Forms */
+  form {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.07);
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  label {
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccd0d5;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    font-family: inherit;
+  }
+
+  input[type="text"]:focus,
+  input[type="date"]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #667eea;
+    outline: none;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .form-row > * {
+    flex-grow: 1;
+    min-width: 160px;
+  }
+
+  button.submit-btn {
+    align-self: flex-start;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.3s ease;
+  }
+
+  button.submit-btn:hover {
+    background: #5469cc;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0,0,0,0.48);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    padding: 16px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal {
+    background: white;
+    border-radius: 14px;
+    max-width: 480px;
+    width: 100%;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgb(0 0 0 / 0.2);
+    position: relative;
+  }
+
+  .modal header {
+    font-weight: 800;
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+  }
+
+  button.close-modal {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #999;
+  }
+
+  button.close-modal:hover {
+    color: #667eea;
+  }
+
+  /* Footer */
+  footer {
+    grid-area: footer;
+    background: #667eea;
+    color: white;
+    text-align: center;
+    padding: 14px 24px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  /* Scrollbar styling */
+  aside.sidebar::-webkit-scrollbar,
+  main.content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  aside.sidebar::-webkit-scrollbar-thumb,
+  main.content::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3);
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Material Icons CDN -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@7.19.6/babel.min.js"></script>
+
+<script type="text/babel">
+
+const { useState, useEffect, useRef } = React;
+
+/* Helper component: Icon */
+function Icon({ name, style = {}, className = '', title = '' }) {
+  return (
+    <span
+      className={`material-icons ${className}`}
+      style={{ fontSize: '20px', verticalAlign: 'middle', ...style }}
+      aria-label={title}
+      title={title}
+      role={title ? 'img' : undefined}
+    >
+      {name}
+    </span>
+  );
+}
+
+/* Modal component */
+function Modal({ isOpen, onClose, children, title }) {
+  useEffect(() => {
+    function onEsc(e) {
+      if(e.key === 'Escape') onClose();
+    }
+    if(isOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', onEsc);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onEsc);
+    }
+  }, [isOpen, onClose]);
+
+  if(!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <button className="close-modal" onClick={onClose} aria-label="Close modal"><Icon name="close" /></button>
+        {title && <header id="modal-title">{title}</header>}
+        <div>{children}</div>
+      </div>
+    </div>
+  )
+}
+
+/* Priority badge component */
+function PriorityBadge({ level }) {
+  const levels = {
+    low: { label: 'Low', colorClass: 'low', icon: 'arrow_downward' },
+    medium: { label: 'Medium', colorClass: 'medium', icon: 'remove' },
+    high: { label: 'High', colorClass: 'high', icon: 'arrow_upward' }
+  }
+  const info = levels[level] || levels.medium;
+  return (
+    <span className={`badge ${info.colorClass}`} title={`Priority: ${info.label}`}>
+      <Icon name={info.icon} style={{ fontSize: '16px' }} /> {info.label}
+    </span>
+  );
+}
+
+/* Task Item */
+function TaskItem({ task, onToggleComplete, onEdit, onDelete }) {
+  const dueDateString = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No deadline';
+  return (
+    <li className={task.completed ? 'completed' : ''} aria-live="polite">
+      <div className="task-item-header">
+        <input
+          id={`task-checkbox-${task.id}`}
+          type="checkbox"
+          checked={task.completed}
+          onChange={() => onToggleComplete(task.id)}
+          aria-label={`Mark task "${task.title}" as ${task.completed ? 'incomplete' : 'complete'}`}
+        />
+        <label htmlFor={`task-checkbox-${task.id}`} className="task-item-title">{task.title}</label>
+        <div className="task-item-actions">
+          <button className="icon-btn" onClick={() => onEdit(task)} aria-label="Edit task">
+            <Icon name="edit" />
+          </button>
+          <button className="icon-btn" onClick={() => onDelete(task.id)} aria-label="Delete task">
+            <Icon name="delete" />
+          </button>
+        </div>
+      </div>
+      <div className="task-details">
+        <span><Icon name="calendar_today" title="Deadline" /> {dueDateString}</span>
+        <span><PriorityBadge level={task.priority} /></span>
+        <span><Icon name="person" title="Assigned to" /> {task.assignedTo || '-'}</span>
+      </div>
+      {task.description && <p>{task.description}</p>}
+    </li>
+  )
+}
+
+/* Task Form: Create or Edit */
+function TaskForm({ onSave, onCancel, existingTask }) {
+  const [title, setTitle] = useState(existingTask ? existingTask.title : '');
+  const [description, setDescription] = useState(existingTask ? existingTask.description : '');
+  const [dueDate, setDueDate] = useState(existingTask && existingTask.dueDate ? existingTask.dueDate.substring(0,10) : '');
+  const [priority, setPriority] = useState(existingTask ? existingTask.priority : 'medium');
+  const [assignedTo, setAssignedTo] = useState(existingTask ? existingTask.assignedTo : '');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if(!title.trim()) {
+      alert('Task title is required');
+      return;
+    }
+    onSave({
+      id: existingTask ? existingTask.id : undefined,
+      title: title.trim(),
+      description: description.trim(),
+      dueDate: dueDate || null,
+      priority,
+      assignedTo: assignedTo.trim() || null,
+      completed: existingTask ? existingTask.completed : false,
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} aria-label={existingTask ? "Edit task form" : "Add task form"}>
+      <label htmlFor="task-title">Title *</label>
+      <input
+        id="task-title"
+        type="text"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        required
+        autoFocus
+      />
+      <label htmlFor="task-desc">Description</label>
+      <textarea
+        id="task-desc"
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        rows="3"
+      />
+      <div className="form-row">
+        <div>
+          <label htmlFor="task-dueDate">Due Date</label>
+          <input
+            id="task-dueDate"
+            type="date"
+            value={dueDate}
+            onChange={e => setDueDate(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="task-priority">Priority</label>
+          <select
+            id="task-priority"
+            value={priority}
+            onChange={e => setPriority(e.target.value)}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="task-assignedTo">Assign To</label>
+          <input
+            id="task-assignedTo"
+            type="text"
+            placeholder="Name"
+            value={assignedTo}
+            onChange={e => setAssignedTo(e.target.value)}
+          />
+        </div>
+      </div>
+      <button type="submit" className="submit-btn">{existingTask ? 'Update Task' : 'Add Task'}</button>
+      <button type="button" className="submit-btn" style={{background: '#bbb', marginLeft: 8}} onClick={onCancel}>Cancel</button>
+    </form>
+  )
+}
+
+/* Project Form: Create or Edit project */
+function ProjectForm({ onSave, onCancel, existingProject }) {
+  const [title, setTitle] = useState(existingProject ? existingProject.title : '');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if(!title.trim()) {
+      alert("Project title is required");
+      return;
+    }
+    onSave({
+      id: existingProject ? existingProject.id : undefined,
+      title: title.trim(),
+      tasks: existingProject ? existingProject.tasks : [],
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} aria-label={existingProject ? "Edit project form" : "Add project form"}>
+      <label htmlFor="project-title">Project Name *</label>
+      <input
+        id="project-title"
+        type="text"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        required
+        autoFocus
+      />
+      <button type="submit" className="submit-btn">{existingProject ? 'Update Project' : 'Add Project'}</button>
+      <button type="button" className="submit-btn" style={{background: "#bbb", marginLeft: 8}} onClick={onCancel}>Cancel</button>
+    </form>
+  )
+}
+
+/* Main Application */
+function App() {
+  // Projects state
+  const [projects, setProjects] = useState(() => {
+    // Load from localStorage if exists
+    const stored = localStorage.getItem('pm_projects');
+    return stored ? JSON.parse(stored) : [
+      {
+        id: "proj-1",
+        title: "Sample Project",
+        tasks: [
+          {
+            id:"task-1",
+            title: "Define project scope",
+            description: "Discuss and finalize project requirements.",
+            dueDate: (new Date(Date.now() + 86400*1000*3)).toISOString().substring(0,10),
+            priority: "high",
+            assignedTo: "Alice",
+            completed: false
+          },
+        ]
+      }
+    ];
+  });
+
+  // Selected project id
+  const [selectedProjectId, setSelectedProjectId] = useState(projects.length > 0 ? projects[0].id : null);
+
+  // Modal states
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState(null);
+
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState(null);
+
+  // Filter states (future feature placeholder)
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  // Persist projects to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('pm_projects', JSON.stringify(projects));
+  }, [projects]);
+
+  // Derive selected project object
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  // Functions to handle CRUD
+
+  // Projects
+  function handleAddProject(project) {
+    project.id = 'proj-' + Math.random().toString(36).substr(2,9);
+    setProjects(prev => [...prev, project]);
+    setSelectedProjectId(project.id);
+    setShowProjectModal(false);
+    setProjectToEdit(null);
+  }
+
+  function handleUpdateProject(updatedProject) {
+    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    setShowProjectModal(false);
+    setProjectToEdit(null);
+  }
+
+  function handleDeleteProject(id) {
+    if(window.confirm("Are you sure you want to delete this project and all its tasks?")) {
+      setProjects(prev => prev.filter(p => p.id !== id));
+      if(selectedProjectId === id) {
+        setSelectedProjectId(prev => prev ? (projects.find(p => p.id !== id) || {}).id : null);
+      }
+    }
+  }
+
+  function openEditProjectModal(project) {
+    setProjectToEdit(project);
+    setShowProjectModal(true);
+  }
+
+  // Tasks
+  function handleAddTask(task) {
+    if(!selectedProject) return;
+    task.id = 'task-' + Math.random().toString(36).substr(2,9);
+    const updatedProject = {
+      ...selectedProject,
+      tasks: [...selectedProject.tasks, task],
+    };
+    setProjects(prev => prev.map(p => p.id === selectedProject.id ? updatedProject : p));
+    setShowTaskModal(false);
+    setTaskToEdit(null);
+  }
+
+  function handleUpdateTask(updatedTask) {
+    if(!selectedProject) return;
+    const updatedTasks = selectedProject.tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+    const updatedProject = {...selectedProject, tasks: updatedTasks};
+    setProjects(prev => prev.map(p => p.id === selectedProject.id ? updatedProject : p));
+    setShowTaskModal(false);
+    setTaskToEdit(null);
+  }
+
+  function handleDeleteTask(taskId) {
+    if(!selectedProject) return;
+    if(window.confirm("Delete this task?")) {
+      const updatedProject = {
+        ...selectedProject,
+        tasks: selectedProject.tasks.filter(t => t.id !== taskId),
+      };
+      setProjects(prev => prev.map(p => p.id === selectedProject.id ? updatedProject : p));
+    }
+  }
+
+  function handleToggleTaskComplete(taskId) {
+    if(!selectedProject) return;
+    const updatedTasks = selectedProject.tasks.map(t => {
+      if(t.id === taskId) return {...t, completed: !t.completed};
+      return t;
+    });
+    const updatedProject = {...selectedProject, tasks: updatedTasks};
+    setProjects(prev => prev.map(p => p.id === selectedProject.id ? updatedProject : p));
+  }
+
+  // Sort tasks by due date then priority
+  function sortedTasks(tasks) {
+    return [...tasks].sort((a,b) => {
+      if(a.completed !== b.completed) return a.completed ? 1 : -1;
+      if(a.dueDate && b.dueDate) {
+        if(a.dueDate !== b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+      } else if(a.dueDate) {
+        return -1;
+      } else if(b.dueDate) {
+        return 1;
+      }
+      const priorityOrder = {high: 0, medium: 1, low: 2};
+      return (priorityOrder[a.priority] || 1) - (priorityOrder[b.priority] || 1);
+    });
+  }
+
+  return (
+    <div className="app-layout" role="application" aria-label="Project Management Tool">
+      <header>
+        <h1>Project Management Tool</h1>
+        <div className="header-actions" role="navigation" aria-label="Main navigation">
+          <button title="Add Project" onClick={() => setShowProjectModal(true)}>
+            <Icon name="add_circle" /> Add Project
+          </button>
+          {/* Future controls like user profile, settings could go here */}
+        </div>
+      </header>
+
+      <aside className="sidebar" aria-label="Projects sidebar">
+        <h2>Projects</h2>
+        <ul className="project-list" role="listbox" aria-activedescendant={selectedProjectId}>
+          {projects.map(proj => (
+            <li key={proj.id}>
+              <button
+                onClick={() => setSelectedProjectId(proj.id)}
+                className={proj.id === selectedProjectId ? 'active' : ''}
+                role="option"
+                aria-selected={proj.id === selectedProjectId}
+                id={proj.id}
+              >
+                {proj.title}
+              </button>
+              <button
+                aria-label={`Edit project ${proj.title}`}
+                className="icon-btn"
+                style={{float: 'right', marginTop: '-36px'}}
+                onClick={() => openEditProjectModal(proj)}
+              >
+                <Icon name="edit" />
+              </button>
+              <button
+                aria-label={`Delete project ${proj.title}`}
+                className="icon-btn"
+                style={{float: 'right', marginTop: '-36px', marginRight: '32px'}}
+                onClick={() => handleDeleteProject(proj.id)}
+              >
+                <Icon name="delete" />
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button className="add-project-btn" onClick={() => setShowProjectModal(true)}>+ New Project</button>
+      </aside>
+
+      <main className="content" aria-live="polite" aria-atomic="true">
+        {!selectedProject ? (
+          <p>Select or create a project to get started</p>
+        ) : (
+          <>
+            <div className="project-header">
+              <h3>{selectedProject.title}</h3>
+              <button onClick={() => {
+                setTaskToEdit(null);
+                setShowTaskModal(true);
+              }}>
+                <Icon name="add" /> Add Task
+              </button>
+            </div>
+
+            {selectedProject.tasks.length === 0 ? (
+              <p>No tasks yet. Add one!</p>
+            ) : (
+              <ul className="task-list" role="list" aria-label={`Tasks in project ${selectedProject.title}`}>
+                {sortedTasks(selectedProject.tasks).map(task => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onToggleComplete={handleToggleTaskComplete}
+                    onEdit={(t) => {setTaskToEdit(t); setShowTaskModal(true)}}
+                    onDelete={handleDeleteTask}
+                  />
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </main>
+
+      {/* Right sidebar for details, stats or chat could be added here for desktop */}
+      <aside className="sidebar-right" aria-label="Project details sidebar" style={{display: 'none'}}></aside>
+
+      <footer>
+        &copy;  Project Management Tool. All rights reserved.
+      </footer>
+
+      {/* Modals */}
+      <Modal
+        isOpen={showProjectModal}
+        onClose={() => {setShowProjectModal(false); setProjectToEdit(null)}}
+        title={projectToEdit ? 'Edit Project' : 'Add Project'}
+      >
+        <ProjectForm
+          existingProject={projectToEdit}
+          onSave={projectToEdit ? handleUpdateProject : handleAddProject}
+          onCancel={() => {setShowProjectModal(false); setProjectToEdit(null)}}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showTaskModal}
+        onClose={() => {setShowTaskModal(false); setTaskToEdit(null)}}
+        title={taskToEdit ? 'Edit Task' : 'Add Task'}
+      >
+        <TaskForm
+          existingTask={taskToEdit}
+          onSave={taskToEdit ? handleUpdateTask : handleAddTask}
+          onCancel={() => {setShowTaskModal(false); setTaskToEdit(null)}}
+        />
+      </Modal>
+    </div>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+</body>
+</html>
+
